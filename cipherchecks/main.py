@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 
 import sys
+import warnings
 
 import crayons
 import sslyze
+
+warnings.filterwarnings("ignore", category=UserWarning, module="sslyze")
+warnings.filterwarnings("ignore", message=".*negative.*", category=DeprecationWarning)
+warnings.filterwarnings("ignore", message=".*negative.*", category=Warning)
 
 
 def scan_target(target, port) -> list:
@@ -38,14 +43,17 @@ def scan_target(target, port) -> list:
             print("The target could not be contacted")
             continue
 
-        ssl2_result = server_scan_result.scan_result.ssl_2_0_cipher_suites
-        ssl3_result = server_scan_result.scan_result.ssl_3_0_cipher_suites
-        tls1_0_result = server_scan_result.scan_result.tls_1_0_cipher_suites
-        tls1_1_result = server_scan_result.scan_result.tls_1_1_cipher_suites
-        tls1_2_result = server_scan_result.scan_result.tls_1_2_cipher_suites
-        tls1_3_result = server_scan_result.scan_result.tls_1_3_cipher_suites
+        scan_result = server_scan_result.scan_result
+        ssl2_result = scan_result.ssl_2_0_cipher_suites
+        ssl3_result = scan_result.ssl_3_0_cipher_suites
+        tls1_0_result = scan_result.tls_1_0_cipher_suites
+        tls1_1_result = scan_result.tls_1_1_cipher_suites
+        tls1_2_result = scan_result.tls_1_2_cipher_suites
+        tls1_3_result = scan_result.tls_1_3_cipher_suites
 
-        if ssl2_result.result.accepted_cipher_suites:
+        ok = sslyze.ScanCommandAttemptStatusEnum.COMPLETED
+
+        if ssl2_result.status == ok and ssl2_result.result.accepted_cipher_suites:
             accepted_ciphers.append('\nAccepted Ciphers for {}:'.format(crayons.red('SSL 2.0')))
             for accepted_cipher_suite in ssl2_result.result.accepted_cipher_suites:
                 if 'CBC' in str(accepted_cipher_suite) and 'DHE' not in str(accepted_cipher_suite):
@@ -57,7 +65,7 @@ def scan_target(target, port) -> list:
                 else:
                     accepted_ciphers.append('\t' + '- ' + accepted_cipher_suite.cipher_suite.name)
 
-        if ssl3_result.result.accepted_cipher_suites:
+        if ssl3_result.status == ok and ssl3_result.result.accepted_cipher_suites:
             accepted_ciphers.append('\nAccepted Ciphers for {}:'.format(crayons.red('SSL 2.0')))
             for accepted_cipher_suite in ssl3_result.result.accepted_cipher_suites:
                 if 'CBC' in str(accepted_cipher_suite) and 'DHE' not in str(accepted_cipher_suite):
@@ -69,7 +77,7 @@ def scan_target(target, port) -> list:
                 else:
                     accepted_ciphers.append('\t' + '- ' + accepted_cipher_suite.cipher_suite.name)
 
-        if tls1_0_result.result.accepted_cipher_suites:
+        if tls1_0_result.status == ok and tls1_0_result.result.accepted_cipher_suites:
             accepted_ciphers.append('\nAccepted Ciphers for {}:'.format(crayons.red('TLS 1.0')))
             for accepted_cipher_suite in tls1_0_result.result.accepted_cipher_suites:
                 if 'CBC' in str(accepted_cipher_suite) and 'DHE' not in str(accepted_cipher_suite):
@@ -81,7 +89,7 @@ def scan_target(target, port) -> list:
                 else:
                     accepted_ciphers.append('\t' + '- ' + accepted_cipher_suite.cipher_suite.name)
 
-        if tls1_1_result.result.accepted_cipher_suites:
+        if tls1_1_result.status == ok and tls1_1_result.result.accepted_cipher_suites:
             accepted_ciphers.append('\nAccepted Ciphers for {}:'.format(crayons.red('TLS 1.1')))
             for accepted_cipher_suite in tls1_1_result.result.accepted_cipher_suites:
                 if 'CBC' in str(accepted_cipher_suite) and 'DHE' not in str(accepted_cipher_suite):
@@ -93,7 +101,7 @@ def scan_target(target, port) -> list:
                 else:
                     accepted_ciphers.append('\t' + '- ' + accepted_cipher_suite.cipher_suite.name)
 
-        if tls1_2_result.result.accepted_cipher_suites:
+        if tls1_2_result.status == ok and tls1_2_result.result.accepted_cipher_suites:
             accepted_ciphers.append('\nAccepted Ciphers for TLS 1.2:')
             for accepted_cipher_suite in tls1_2_result.result.accepted_cipher_suites:
                 if 'CBC' in str(accepted_cipher_suite) and 'DHE' not in str(accepted_cipher_suite):
@@ -105,7 +113,7 @@ def scan_target(target, port) -> list:
                 else:
                     accepted_ciphers.append('\t' + '- ' + accepted_cipher_suite.cipher_suite.name)
 
-        if tls1_3_result.result.accepted_cipher_suites:
+        if tls1_3_result.status == ok and tls1_3_result.result.accepted_cipher_suites:
             accepted_ciphers.append('\nAccepted Ciphers for TLS 1.3:')
             for accepted_cipher_suite in tls1_3_result.result.accepted_cipher_suites:
                 accepted_ciphers.append('\t' + '- ' + accepted_cipher_suite.cipher_suite.name)
